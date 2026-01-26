@@ -1,10 +1,3 @@
-interface Site {
-  id: string;
-  name: string;
-  address?: string;
-  _count?: { cameras: number };
-}
-
 interface Alarm {
   id: string;
   siteName: string;
@@ -27,6 +20,23 @@ interface Alarm {
 interface Camera {
   id: string;
   name: string;
+}
+
+interface CameraDetails extends Camera {
+  ipAddress: string;
+  status: string;
+  protocol: string;
+  macAddress?: string;
+  serialNumber?: string;
+}
+
+interface Site {
+  id: string;
+  name: string;
+  address: string | null;
+  description: string | null;
+  cameras: CameraDetails[];
+  _count?: { cameras: number };
 }
 
 interface AlarmEvent {
