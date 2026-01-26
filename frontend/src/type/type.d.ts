@@ -17,6 +17,17 @@ interface Alarm {
   };
 }
 
+interface DiscoveredCamera {
+  ipAddress: string;
+  macAddress?: string;
+  deviceType?: string;
+  serialNumber?: string;
+  manufacturer?: string;
+  snapshotUrl?: string | null;
+  rtspUrl?: string;
+}
+
+
 interface Camera {
   id: string;
   name: string;
@@ -25,17 +36,22 @@ interface Camera {
 interface CameraDetails extends Camera {
   ipAddress: string;
   status: string;
+  port?: number;
   protocol: string;
   macAddress?: string;
   serialNumber?: string;
+  manufacturer?: string | null;
+  model?: string | null;
+  isOnline?: boolean;
+  site?: { id: string; name: string } | null;
 }
 
 interface Site {
   id: string;
   name: string;
   address: string | null;
-  description: string | null;
-  cameras: CameraDetails[];
+  description?: string | null;
+  cameras?: CameraDetails[];
   _count?: { cameras: number };
 }
 
