@@ -1,10 +1,9 @@
 import { Router } from "express";
-import { PrismaClient } from "@prisma/client";
 import { Request } from "express";
+import { prisma } from "../index";
 import logger from "../utils/logger";
 
 const router = Router();
-const prisma = new PrismaClient();
 
 /**
  * 리포트 생성
