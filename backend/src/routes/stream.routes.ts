@@ -129,28 +129,6 @@ router.get("/:cameraId/status", async (req: Request, res) => {
 });
 
 /**
- * 모든 활성 스트림 목록
- */
-router.get("/active", async (req: Request, res) => {
-  const streams = HLSStreamService.getActiveStreams();
-  res.json({ streams, count: streams.length });
-});
-
-/**
- * 모든 FFmpeg 프로세스 강제 종료 (긴급 정리용)
- */
-router.post("/kill-all", async (req: Request, res) => {
-  try {
-    const killedCount = await HLSStreamService.killAllFFmpegProcesses();
-    logger.warn(`Force killed ${killedCount} FFmpeg processes by user request`);
-    res.json({ success: true, killedCount, message: `Killed ${killedCount} FFmpeg processes` });
-  } catch (error) {
-    logger.error("Kill all streams error:", error);
-    res.status(500).json({ error: "Failed to kill FFmpeg processes" });
-  }
-});
-
-/**
  * 스냅샷 캡처 (FFmpeg RTSP)
  */
 router.get("/:cameraId/snapshot", async (req: Request, res) => {
@@ -183,14 +161,6 @@ router.get("/:cameraId/snapshot", async (req: Request, res) => {
     logger.error("Snapshot error:", error);
     res.status(500).json({ error: "Failed to capture snapshot" });
   }
-});
-
-/**
- * FFmpeg 설치 확인
- */
-router.get("/ffmpeg/check", async (req: Request, res) => {
-  const installed = await FFmpegCaptureService.checkFFmpegInstalled();
-  res.json({ installed });
 });
 
 export default router;
