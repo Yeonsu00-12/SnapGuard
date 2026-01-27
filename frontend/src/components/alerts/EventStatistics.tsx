@@ -13,10 +13,6 @@ interface Alarm {
     detectionTime: string;
 }
 
-interface Report {
-    id: string;
-    createdAt: string;
-}
 
 interface EventStatisticsProps {
     selectedDate: Date;
@@ -27,7 +23,6 @@ export default function EventStatistics({ selectedDate }: EventStatisticsProps) 
     const [loading, setLoading] = useState(true);
     const [totalEvents, setTotalEvents] = useState(0);
     const [prevEvents, setPrevEvents] = useState(0);
-    const [reportCount, setReportCount] = useState(0);
     const [eventCameras, setEventCameras] = useState(0);
     const [totalCameras, setTotalCameras] = useState(0);
     const [hourlyData, setHourlyData] = useState<number[]>(Array(24).fill(0));
@@ -41,11 +36,10 @@ export default function EventStatistics({ selectedDate }: EventStatisticsProps) 
             setLoading(true);
             const { start, end, prevStart, prevEnd } = getDateRange(selectedPeriod, selectedDate);
 
-            const [currentAlarmsData, prevAlarmsData, camerasData, reportsData] = await Promise.all([
+            const [currentAlarmsData, prevAlarmsData, camerasData] = await Promise.all([
                 api.getAlarms({ startDate: start.toISOString(), endDate: end.toISOString(), limit: "10000" }),
                 api.getAlarms({ startDate: prevStart.toISOString(), endDate: prevEnd.toISOString(), limit: "10000" }),
                 api.getCameras(),
-                api.getReports(),
             ]);
 
             setTotalEvents(currentAlarmsData.total || currentAlarmsData.alarms.length);
@@ -54,12 +48,6 @@ export default function EventStatistics({ selectedDate }: EventStatisticsProps) 
 
             const uniqueCameras = new Set(currentAlarmsData.alarms.map((a: Alarm) => a.cameraId));
             setEventCameras(uniqueCameras.size);
-
-            const filteredReports = (reportsData as Report[]).filter((report) => {
-                const reportDate = new Date(report.createdAt);
-                return reportDate >= start && reportDate <= end;
-            });
-            setReportCount(filteredReports.length);
 
             // 시간대별 이벤트 집계
             const hourCounts = Array(24).fill(0);
@@ -117,7 +105,6 @@ export default function EventStatistics({ selectedDate }: EventStatisticsProps) 
                                 {isIncrease ? <MoveUpRight size={14} /> : Number(isIncrease) === 0 ? "" : <MoveDownRight size={14} />}
                                 {periodLabel} 대비 {isIncrease ? "+" : Number(isIncrease) === 0 ? "" : "-"}{rate}%
                             </p>
-                            <p className="text-sm text-slate-500 mt-2">신고 건수: {reportCount}건</p>
                         </div>
 
                         <div className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm">

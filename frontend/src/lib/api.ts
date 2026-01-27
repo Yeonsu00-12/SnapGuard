@@ -79,10 +79,6 @@ class ApiClient {
     return this.request("/sites", { method: "POST", body: data });
   }
 
-  async updateSite(id: string, data: any) {
-    return this.request(`/sites/${id}`, { method: "PUT", body: data });
-  }
-
   async deleteSite(id: string) {
     return this.request(`/sites/${id}`, { method: "DELETE" });
   }
@@ -92,16 +88,8 @@ class ApiClient {
     return this.request<any[]>("/cameras");
   }
 
-  async getCamera(id: string) {
-    return this.request<any>(`/cameras/${id}`);
-  }
-
   async addCamera(data: any) {
     return this.request("/cameras", { method: "POST", body: data });
-  }
-
-  async updateCamera(id: string, data: any) {
-    return this.request(`/cameras/${id}`, { method: "PUT", body: data });
   }
 
   async deleteCamera(id: string) {
@@ -138,35 +126,15 @@ class ApiClient {
     });
   }
 
-  // Motion Detection (Hikvision ISAPI)
-  async getMotionDetection(ipAddress: string, username?: string, password?: string) {
-    return this.request<{ grid: boolean[][]; enabled: boolean }>("/hikvision/motion-detection", {
-      method: "POST",
-      body: { ipAddress, username, password, action: "get" },
-    });
-  }
-
-  async setMotionDetection(ipAddress: string, grid: boolean[][], username?: string, password?: string) {
-    return this.request<{ success: boolean }>("/hikvision/motion-detection", {
-      method: "POST",
-      body: { ipAddress, username, password, action: "set", grid },
-    });
-  }
-
-  // Streaming
-  async getStreamInfo(cameraId: string) {
-    return this.request<{ cameraId: string; webrtcUrl: string; whepUrl: string }>(
-      `/stream/${cameraId}/info`
+  // Motion Detection
+  async getMotionDetection(cameraId: string, username?: string, password?: string) {
+    const params = new URLSearchParams();
+    if (username) params.append("username", username);
+    if (password) params.append("password", password);
+    const query = params.toString() ? `?${params.toString()}` : "";
+    return this.request<{ enabled: boolean; sensitivity: number; grid: boolean[][] }>(
+      `/motion-detection/${cameraId}${query}`
     );
-  }
-
-  // Detection Zones
-  async getZones(cameraId: string) {
-    return this.request<any[]>(`/zones/camera/${cameraId}`);
-  }
-
-  async createZone(cameraId: string, data: any) {
-    return this.request(`/zones/camera/${cameraId}`, { method: "POST", body: data });
   }
 
   // Alarms
@@ -200,10 +168,6 @@ class ApiClient {
     notes?: string;
   }) {
     return this.request<any>("/reports", { method: "POST", body: data });
-  }
-
-  async getReports() {
-    return this.request<any[]>("/reports");
   }
 }
 
