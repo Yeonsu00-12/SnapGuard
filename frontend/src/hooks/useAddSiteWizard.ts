@@ -220,7 +220,7 @@ export function useAddSiteWizard(
         scanCameras,
         testConnections,
         handleComplete,
-        handleNextStep,
+        handleStep1Next: handleNextStep,
         handleStep3Next,
         handleStep4Next
     }
