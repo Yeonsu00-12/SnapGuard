@@ -125,10 +125,10 @@ export default function SiteDetailPage() {
       {/* Cameras Section */}
       <div className="bg-white rounded-lg shadow">
         <div className="p-2 px-4 border-b">
-          <h2 className="text-md font-semibold">연결된 카메라 ({site.cameras.length})</h2>
+          <h2 className="text-md font-semibold">연결된 카메라 ({site.cameras?.length ?? 0})</h2>
         </div>
 
-        {site.cameras.length === 0 ? (
+        {!site.cameras || site.cameras.length === 0 ? (
           <div className="p-8 text-center">
             <p className="text-gray-500 mb-2">카메라를 추가해주세요.</p>
             <p className="text-gray-400 text-sm">카메라 추가는 하단바에 "추가" 버튼을 이용해주세요.</p>
