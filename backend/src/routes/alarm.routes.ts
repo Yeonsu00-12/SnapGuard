@@ -76,7 +76,7 @@ router.get("/:id", async (req, res) => {
           },
         },
         acknowledgements: {
-          include: { user: { select: { id: true, name: true, email: true } } },
+          include: { user: { select: { id: true, email: true } } },
           orderBy: { createdAt: "desc" },
         },
       },
