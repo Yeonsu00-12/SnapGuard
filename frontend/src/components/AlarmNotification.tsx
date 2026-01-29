@@ -12,12 +12,9 @@ export function AlarmNotificationProvider({ children }: { children: React.ReactN
   const router = useRouter();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     const newSocket = io(SERVER_BASE, {
       transports: ["websocket", "polling"],
-      auth: { token },
+      withCredentials: true,
     });
 
     newSocket.on("connect", () => {
@@ -43,7 +40,7 @@ export function AlarmNotificationProvider({ children }: { children: React.ReactN
           label: "상세보기",
           onClick: () => router.push(`/alarms?selected=${alarm.id}`),
         },
-        duration: 6000,
+        duration: 8000,
         className: "border-l-4 border-red-600"
       });
     });
