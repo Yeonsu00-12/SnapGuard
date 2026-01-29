@@ -161,7 +161,7 @@ router.get("/:cameraId", async (req: Request, res) => {
 router.put("/:cameraId", async (req: Request, res) => {
   try {
     const { cameraId } = req.params;
-    const { enabled = true, sensitivity = 50, grid, username = "admin", password = "" } = req.body;
+    let { enabled = true, sensitivity = 50, grid, username, password } = req.body;
 
     if (!grid || !Array.isArray(grid)) {
       return res.status(400).json({ error: "grid (boolean[][]) is required" });
@@ -170,6 +170,32 @@ router.put("/:cameraId", async (req: Request, res) => {
     const camera = await prisma.camera.findUnique({ where: { id: cameraId } });
     if (!camera) {
       return res.status(404).json({ error: "Camera not found" });
+    }
+
+    // body에 인증 정보가 없으면 카메라 DB에서 가져오기
+    if (!username || !password) {
+      if (camera.usernameEncrypted && camera.encryptionIV && camera.encryptionTag) {
+        try {
+          const decrypted = cryptoService.decrypt(
+            camera.usernameEncrypted,
+            camera.encryptionIV,
+            camera.encryptionTag
+          );
+          const creds = JSON.parse(decrypted);
+          username = username || creds.username || "admin";
+          password = password || creds.password;
+        } catch (e) {
+          logger.warn(`Failed to decrypt credentials for camera ${cameraId}`);
+          return res.status(400).json({ error: "Camera credentials not available" });
+        }
+      } else {
+        return res.status(400).json({ error: "Camera credentials not configured" });
+      }
+    }
+
+    // 인증 정보 최종 확인
+    if (!username || !password) {
+      return res.status(400).json({ error: "Camera credentials missing" });
     }
 
     let result: { success: boolean; message: string };
