@@ -86,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <h1 className="font-black text-lg tracking-tighter pl-12">SnapGuard</h1>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-400">{user?.name || user?.email}</span>
+            <span className="text-xs font-bold text-slate-400">{user?.email}</span>
             <button
               onClick={() => {
                 api.logout();

@@ -58,12 +58,15 @@ class ApiClient {
     });
   }
 
-  async logout() {
-    return this.request("/auth/logout", { method: "POST" });
+  async register(email: string, password: string) {
+    return this.request<{ user: any }>("/auth/register", {
+      method: "POST",
+      body: { email, password },
+    });
   }
 
-  async getSession() {
-    return this.request<{ user: any }>("/auth/session");
+  async logout() {
+    return this.request("/auth/logout", { method: "POST" });
   }
 
   // Sites
