@@ -16,6 +16,7 @@ export default function LiveViewPage() {
   const [selectedSite, setSelectedSite] = useState<string>(siteIdFromUrl || "");
   const [sites, setSites] = useState<{ id: string; name: string }[]>([]);
   const [detectionGrids, setDetectionGrids] = useState<Map<string, boolean[][]>>(new Map());
+  const [detectionSupported, setDetectionSupported] = useState<Map<string, boolean>>(new Map());
   const [showGridOverlay, setShowGridOverlay] = useState<Set<string>>(new Set());
   const [streamingCameras, setStreamingCameras] = useState<Set<string>>(new Set());
   const [streamMode, setStreamMode] = useState<StreamMode>("mjpeg");
@@ -100,11 +101,14 @@ export default function LiveViewPage() {
   const loadDetectionGrid = async (ipAddress: string, cameraId: string) => {
     try {
       const result = await api.getMotionDetection(cameraId);
-      if (result.grid) {
+      // 지원 여부 저장
+      setDetectionSupported((prev) => new Map(prev).set(cameraId, result.supported !== false));
+      if (result.supported !== false && result.grid) {
         setDetectionGrids((prev) => new Map(prev).set(cameraId, result.grid));
       }
     } catch (error) {
       console.log(`[Live] Could not load detection grid for ${ipAddress}`);
+      setDetectionSupported((prev) => new Map(prev).set(cameraId, false));
     }
   };
 
@@ -220,25 +224,27 @@ export default function LiveViewPage() {
                     <p className="text-xs text-gray-500">{camera.name}</p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setShowGridOverlay((prev) => {
-                          const newSet = new Set(prev);
-                          if (newSet.has(camera.id)) {
-                            newSet.delete(camera.id);
-                          } else {
-                            newSet.add(camera.id);
-                          }
-                          return newSet;
-                        });
-                      }}
-                      className={`px-3 py-0.5 rounded-md text-sm transition-colors ${showGridOverlay.has(camera.id)
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
-                    >
-                      {showGridOverlay.has(camera.id) ? "감지 영역 숨기기" : "감지 영역 표시"}
-                    </button>
+                    {detectionSupported.get(camera.id) !== false && (
+                      <button
+                        onClick={() => {
+                          setShowGridOverlay((prev) => {
+                            const newSet = new Set(prev);
+                            if (newSet.has(camera.id)) {
+                              newSet.delete(camera.id);
+                            } else {
+                              newSet.add(camera.id);
+                            }
+                            return newSet;
+                          });
+                        }}
+                        className={`px-3 py-0.5 rounded-md text-sm transition-colors ${showGridOverlay.has(camera.id)
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          }`}
+                      >
+                        {showGridOverlay.has(camera.id) ? "감지 영역 숨기기" : "감지 영역 표시"}
+                      </button>
+                    )}
                   </div>
                 </div>
 

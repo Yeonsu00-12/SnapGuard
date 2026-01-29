@@ -141,7 +141,8 @@ export function useAddSiteWizard(
                     password: creds.password,
                     rtspMainStream: connected.rtspUrl || undefined,
                     macAddress: scannedCamera?.macAddress,
-                    serialNumber: scannedCamera?.serialNumber,
+                    model: scannedCamera?.model || undefined,
+                    manufacturer: scannedCamera?.brand || undefined,
                 });
             }
 
@@ -165,6 +166,9 @@ export function useAddSiteWizard(
             store.setConfiguringDetection(false);
         }
     };
+
+    // 감지영역 설정 건너뛰기 (handleComplete와 동일)
+    const handleSkipDetection = handleComplete;
 
     const handleNextStep = async () => {
         if (store.step === 1) {
@@ -220,9 +224,9 @@ export function useAddSiteWizard(
         scanCameras,
         testConnections,
         handleComplete,
+        handleSkipDetection,
         handleStep1Next: handleNextStep,
         handleStep3Next,
         handleStep4Next
     }
 }
-

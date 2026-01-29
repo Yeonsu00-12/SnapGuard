@@ -62,20 +62,29 @@ export default function WizardFooter({ wizard }: { wizard: any }) {
             )}
 
             {wizard.step === 5 && (
-                <button
-                    onClick={wizard.handleComplete}
-                    disabled={wizard.saving || wizard.configuringDetection}
-                    className="w-full py-3 rounded-lg font-bold text-md transition-all bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50"
-                >
-                    {wizard.saving || wizard.configuringDetection ? (
-                        <span className="flex items-center justify-center gap-2">
-                            <RefreshCw size={20} className="animate-spin" />
-                            {wizard.configuringDetection ? "CCTV 설정 중..." : "저장 중..."}
-                        </span>
-                    ) : (
-                        `${wizard.connectedCameras.size}대 CCTV 설정 완료`
-                    )}
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={wizard.handleSkipDetection}
+                        disabled={wizard.saving || wizard.configuringDetection}
+                        className="flex-1 py-3 rounded-lg font-bold text-md transition-all border-2 border-slate-200 text-slate-600 hover:bg-slate-50 active:scale-[0.98] disabled:opacity-50"
+                    >
+                        건너뛰기
+                    </button>
+                    <button
+                        onClick={wizard.handleComplete}
+                        disabled={wizard.saving || wizard.configuringDetection}
+                        className="flex-[2] py-3 rounded-lg font-bold text-md transition-all bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50"
+                    >
+                        {wizard.saving || wizard.configuringDetection ? (
+                            <span className="flex items-center justify-center gap-2">
+                                <RefreshCw size={20} className="animate-spin" />
+                                {wizard.configuringDetection ? "CCTV 설정 중..." : "저장 중..."}
+                            </span>
+                        ) : (
+                            "감지영역 설정 완료"
+                        )}
+                    </button>
+                </div>
             )}
         </div>
     );
