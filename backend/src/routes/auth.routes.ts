@@ -68,12 +68,20 @@ router.post("/login", async (req: Request, res: Response) => {
       email: user.email,
     };
 
-    logger.info(`User logged in: ${email}`);
-    res.json({
-      user: {
-        id: user.id,
-        email: user.email,
-      },
+    // 세션 저장 후 응답 전송
+    req.session.save((err) => {
+      if (err) {
+        logger.error("Session save error:", err);
+        return res.status(500).json({ error: "세션 저장에 실패했습니다" });
+      }
+
+      logger.info(`User logged in: ${email}`);
+      res.json({
+        user: {
+          id: user.id,
+          email: user.email,
+        },
+      });
     });
   } catch (error) {
     logger.error("Login error:", error);
