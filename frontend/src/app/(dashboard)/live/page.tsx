@@ -89,7 +89,7 @@ export default function LiveViewPage() {
       }
 
       // 모든 카메라 자동 스트리밍 시작
-      setStreamingCameras(new Set(targetCameras.map((c: Camera) => c.id)));
+      setStreamingCameras(new Set(targetCameras.map((c: CameraDetails) => c.id)));
     } catch (error) {
       console.error("Failed to load data:", error);
     } finally {
