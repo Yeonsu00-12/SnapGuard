@@ -33,10 +33,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   useEffect(() => {
-    // 세션 체크 없이 바로 로딩 완료
-    setUser({ name: "Test User", email: "test@test.com" });
-    setLoading(false);
-    fetchTodayAlarmCount();
+    // 현재 사용자 정보 가져오기
+    const checkAuth = async () => {
+      try {
+        const response = await api.me();
+        setUser(response.user);
+        setLoading(false);
+        fetchTodayAlarmCount();
+      } catch (error) {
+        // 인증 실패 시 로그인 페이지로 리다이렉트
+        router.push("/login");
+      }
+    };
+
+    checkAuth();
 
     // 알람 읽음 이벤트 리스너
     const handleAlarmRead = () => {
@@ -48,7 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => {
       window.removeEventListener("alarm-read", handleAlarmRead);
     };
-  }, []);
+  }, [router]);
 
   const handleSiteAdded = (site: any) => {
     // 커스텀 이벤트를 발생시켜 stores 페이지가 데이터를 새로고침하도록 함
@@ -86,7 +96,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <h1 className="font-black text-lg tracking-tighter pl-12">SnapGuard</h1>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-400">{user?.name || user?.email}</span>
+            <span className="text-xs font-bold text-slate-400">{user?.email}</span>
             <button
               onClick={() => {
                 api.logout();

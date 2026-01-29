@@ -7,22 +7,35 @@ import { Mail, Lock, ChevronRight, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (password !== confirmPassword) {
+      setError("비밀번호가 일치하지 않습니다");
+      return;
+    }
+
+    if (password.length < 4) {
+      setError("비밀번호는 4자 이상이어야 합니다");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await api.login(email, password);
-      router.push("/");
+      await api.register(email, password);
+      router.push("/login");
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -52,14 +65,14 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* 로그인 카드 */}
+          {/* 회원가입 카드 */}
           <div className="bg-white rounded-xl shadow-xl p-8 border border-slate-100">
             <div className="mb-8 text-center">
               <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
-                로그인
+                회원가입
               </h2>
               <p className="text-sm text-slate-400 mt-1">
-                계정에 로그인하세요
+                새 계정을 만드세요
               </p>
             </div>
 
@@ -79,7 +92,7 @@ export default function LoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent focus:border-blue-600 rounded-2xl outline-none font-bold text-slate-800 transition-all placeholder:text-slate-300"
-                    placeholder="아이디를 입력해주세요"
+                    placeholder="이메일을 입력해주세요"
                   />
                 </div>
               </div>
@@ -99,7 +112,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     className="w-full pl-12 pr-12 py-4 bg-slate-50 border-2 border-transparent focus:border-blue-600 rounded-2xl outline-none font-bold text-slate-800 transition-all placeholder:text-slate-300"
-                    placeholder="비밀번호를 입력해주세요"
+                    placeholder="비밀번호를 4자 이상 입력해주세요"
                   />
                   <button
                     type="button"
@@ -107,6 +120,33 @@ export default function LoginPage() {
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition-colors"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-400 uppercase tracking-wider">
+                  비밀번호 확인
+                </label>
+                <div className="relative">
+                  <Lock
+                    size={18}
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"
+                  />
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    className="w-full pl-12 pr-12 py-4 bg-slate-50 border-2 border-transparent focus:border-blue-600 rounded-2xl outline-none font-bold text-slate-800 transition-all placeholder:text-slate-300"
+                    placeholder="비밀번호를 다시 입력해주세요"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
               </div>
@@ -126,7 +166,7 @@ export default function LoginPage() {
                   <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    로그인
+                    회원가입
                     <ChevronRight size={20} />
                   </>
                 )}
@@ -135,9 +175,9 @@ export default function LoginPage() {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-slate-400">
-                계정이 없으신가요?{" "}
-                <Link href="/register" className="text-blue-600 font-bold hover:underline">
-                  회원가입
+                이미 계정이 있으신가요?{" "}
+                <Link href="/login" className="text-blue-600 font-bold hover:underline">
+                  로그인
                 </Link>
               </p>
             </div>

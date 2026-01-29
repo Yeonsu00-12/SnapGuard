@@ -6,9 +6,21 @@ import fs from "fs";
 
 const router = Router();
 
-// 알람 목록 조회
+// 알람 목록 조회 (현재 사용자가 접근 가능한 사이트의 알람만)
 router.get("/", async (req, res) => {
   try {
+    const user = (req.session as any).user;
+    if (!user) {
+      return res.status(401).json({ error: "인증이 필요합니다" });
+    }
+
+    // 사용자가 접근 가능한 사이트 ID 목록 조회
+    const userSites = await prisma.userSite.findMany({
+      where: { userId: user.id },
+      select: { siteId: true },
+    });
+    const accessibleSiteIds = userSites.map((us) => us.siteId);
+
     const {
       status,
       severity,
@@ -20,13 +32,22 @@ router.get("/", async (req, res) => {
       offset = "0",
     } = req.query;
 
-    const where: any = {};
+    const where: any = {
+      camera: {
+        siteId: { in: accessibleSiteIds },
+      },
+    };
 
     if (status) where.status = status;
     if (severity) where.severity = severity;
     if (cameraId) where.cameraId = cameraId;
     if (siteId) {
-      where.camera = { siteId };
+      // siteId가 접근 가능한 사이트인지 확인
+      if (accessibleSiteIds.includes(siteId as string)) {
+        where.camera.siteId = siteId;
+      } else {
+        return res.json({ alarms: [], total: 0, limit: parseInt(limit as string), offset: parseInt(offset as string) });
+      }
     }
     if (startDate || endDate) {
       where.detectionTime = {};
@@ -63,6 +84,11 @@ router.get("/", async (req, res) => {
 // 알람 상세 조회
 router.get("/:id", async (req, res) => {
   try {
+    const user = (req.session as any).user;
+    if (!user) {
+      return res.status(401).json({ error: "인증이 필요합니다" });
+    }
+
     const { id } = req.params;
 
     const alarm = await prisma.alarm.findUnique({
@@ -72,11 +98,12 @@ router.get("/:id", async (req, res) => {
           select: {
             id: true,
             name: true,
+            siteId: true,
             site: { select: { id: true, name: true, address: true } },
           },
         },
         acknowledgements: {
-          include: { user: { select: { id: true, name: true, email: true } } },
+          include: { user: { select: { id: true, email: true } } },
           orderBy: { createdAt: "desc" },
         },
       },
@@ -84,6 +111,22 @@ router.get("/:id", async (req, res) => {
 
     if (!alarm) {
       return res.status(404).json({ error: "Alarm not found" });
+    }
+
+    // 접근 권한 확인
+    if (alarm.camera?.siteId) {
+      const userSite = await prisma.userSite.findUnique({
+        where: {
+          userId_siteId: {
+            userId: user.id,
+            siteId: alarm.camera.siteId,
+          },
+        },
+      });
+
+      if (!userSite) {
+        return res.status(403).json({ error: "이 알람에 접근 권한이 없습니다" });
+      }
     }
 
     res.json(alarm);
@@ -96,12 +139,42 @@ router.get("/:id", async (req, res) => {
 // 알람 상태 변경
 router.put("/:id/status", async (req, res) => {
   try {
+    const user = (req.session as any).user;
+    if (!user) {
+      return res.status(401).json({ error: "인증이 필요합니다" });
+    }
+
     const { id } = req.params;
     const { status } = req.body;
 
     const validStatuses = ["NEW", "ACKNOWLEDGED", "INVESTIGATING", "RESOLVED", "FALSE_ALARM"];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ error: "Invalid status" });
+    }
+
+    // 알람 조회 및 권한 확인
+    const existingAlarm = await prisma.alarm.findUnique({
+      where: { id },
+      include: { camera: { select: { siteId: true } } },
+    });
+
+    if (!existingAlarm) {
+      return res.status(404).json({ error: "Alarm not found" });
+    }
+
+    if (existingAlarm.camera?.siteId) {
+      const userSite = await prisma.userSite.findUnique({
+        where: {
+          userId_siteId: {
+            userId: user.id,
+            siteId: existingAlarm.camera.siteId,
+          },
+        },
+      });
+
+      if (!userSite) {
+        return res.status(403).json({ error: "이 알람을 수정할 권한이 없습니다" });
+      }
     }
 
     const alarm = await prisma.alarm.update({
@@ -120,15 +193,39 @@ router.put("/:id/status", async (req, res) => {
 // 알람 스냅샷 조회
 router.get("/:id/snapshot", async (req, res) => {
   try {
+    const user = (req.session as any).user;
+    if (!user) {
+      return res.status(401).json({ error: "인증이 필요합니다" });
+    }
+
     const { id } = req.params;
 
     const alarm = await prisma.alarm.findUnique({
       where: { id },
-      select: { snapshotPath: true },
+      select: {
+        snapshotPath: true,
+        camera: { select: { siteId: true } },
+      },
     });
 
     if (!alarm) {
       return res.status(404).json({ error: "Alarm not found" });
+    }
+
+    // 접근 권한 확인
+    if (alarm.camera?.siteId) {
+      const userSite = await prisma.userSite.findUnique({
+        where: {
+          userId_siteId: {
+            userId: user.id,
+            siteId: alarm.camera.siteId,
+          },
+        },
+      });
+
+      if (!userSite) {
+        return res.status(403).json({ error: "이 스냅샷에 접근 권한이 없습니다" });
+      }
     }
 
     if (!alarm.snapshotPath || !fs.existsSync(alarm.snapshotPath)) {
@@ -142,15 +239,36 @@ router.get("/:id/snapshot", async (req, res) => {
   }
 });
 
-// 알람 통계
+// 알람 통계 (현재 사용자가 접근 가능한 사이트의 알람만)
 router.get("/stats/summary", async (req, res) => {
-
   try {
+    const user = (req.session as any).user;
+    if (!user) {
+      return res.status(401).json({ error: "인증이 필요합니다" });
+    }
+
+    // 사용자가 접근 가능한 사이트 ID 목록 조회
+    const userSites = await prisma.userSite.findMany({
+      where: { userId: user.id },
+      select: { siteId: true },
+    });
+    const accessibleSiteIds = userSites.map((us) => us.siteId);
+
     const { siteId, startDate, endDate } = req.query;
 
-    const where: any = {};
+    const where: any = {
+      camera: {
+        siteId: { in: accessibleSiteIds },
+      },
+    };
+
     if (siteId) {
-      where.camera = { siteId };
+      // siteId가 접근 가능한 사이트인지 확인
+      if (accessibleSiteIds.includes(siteId as string)) {
+        where.camera.siteId = siteId;
+      } else {
+        return res.json({ total: 0, byStatus: {}, bySeverity: {}, byEventType: {} });
+      }
     }
     if (startDate || endDate) {
       where.detectionTime = {};

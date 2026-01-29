@@ -131,7 +131,7 @@ export function useAddSiteWizard(
                 const customName = store.cameraNames.get(ip);
                 const cameraName = customName?.trim() || scannedCamera?.model || `CCTV ${ip}`;
 
-                await api.addCamera({
+                const addedCamera = await api.addCamera({
                     siteId,
                     name: cameraName,
                     ipAddress: ip,
@@ -141,8 +141,26 @@ export function useAddSiteWizard(
                     password: creds.password,
                     rtspMainStream: connected.rtspUrl || undefined,
                     macAddress: scannedCamera?.macAddress,
-                    serialNumber: scannedCamera?.serialNumber,
+                    model: scannedCamera?.model || undefined,
+                    manufacturer: scannedCamera?.brand || undefined,
                 });
+
+                // 감지영역 설정이 있으면 카메라에 저장
+                const detectionGrid = store.detectionGrids.get(ip);
+                const sensitivity = store.sensitivities.get(ip) || 60;
+                if (detectionGrid && (addedCamera as any).id) {
+                    try {
+                        await api.setMotionDetection(
+                            (addedCamera as any).id,
+                            detectionGrid,
+                            sensitivity,
+                            true
+                        );
+                    } catch (err) {
+                        console.warn(`Failed to set motion detection for ${ip}:`, err);
+                        // 감지영역 설정 실패해도 카메라 추가는 완료된 것으로 처리
+                    }
+                }
             }
 
             store.showToast(
@@ -165,6 +183,9 @@ export function useAddSiteWizard(
             store.setConfiguringDetection(false);
         }
     };
+
+    // 감지영역 설정 건너뛰기 (handleComplete와 동일)
+    const handleSkipDetection = handleComplete;
 
     const handleNextStep = async () => {
         if (store.step === 1) {
@@ -220,9 +241,9 @@ export function useAddSiteWizard(
         scanCameras,
         testConnections,
         handleComplete,
+        handleSkipDetection,
         handleStep1Next: handleNextStep,
         handleStep3Next,
         handleStep4Next
     }
 }
-

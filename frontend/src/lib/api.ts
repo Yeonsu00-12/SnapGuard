@@ -58,12 +58,19 @@ class ApiClient {
     });
   }
 
+  async register(email: string, password: string) {
+    return this.request<{ user: any }>("/auth/register", {
+      method: "POST",
+      body: { email, password },
+    });
+  }
+
   async logout() {
     return this.request("/auth/logout", { method: "POST" });
   }
 
-  async getSession() {
-    return this.request<{ user: any }>("/auth/session");
+  async me() {
+    return this.request<{ user: { id: string; email: string } }>("/auth/me");
   }
 
   // Sites
@@ -132,8 +139,23 @@ class ApiClient {
     if (username) params.append("username", username);
     if (password) params.append("password", password);
     const query = params.toString() ? `?${params.toString()}` : "";
-    return this.request<{ enabled: boolean; sensitivity: number; grid: boolean[][] }>(
+    return this.request<{ enabled: boolean; sensitivity: number; grid: boolean[][]; supported?: boolean }>(
       `/motion-detection/${cameraId}${query}`
+    );
+  }
+
+  async setMotionDetection(
+    cameraId: string,
+    grid: boolean[][],
+    sensitivity: number = 50,
+    enabled: boolean = true
+  ) {
+    return this.request<{ success: boolean; message: string }>(
+      `/motion-detection/${cameraId}`,
+      {
+        method: "PUT",
+        body: { enabled, sensitivity, grid },
+      }
     );
   }
 
