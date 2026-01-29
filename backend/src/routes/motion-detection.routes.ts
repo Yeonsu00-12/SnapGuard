@@ -3,6 +3,7 @@ import { Request } from "express";
 import { prisma } from "../index";
 import { HikvisionDetectionService } from "../services/hikvision-detection.service";
 import { DahuaDetectionService } from "../services/dahua-detection.service";
+import { cryptoService } from "../services/crypto.service";
 import logger from "../utils/logger";
 
 const router = Router();
@@ -36,12 +37,43 @@ const router = Router();
 router.get("/:cameraId", async (req: Request, res) => {
   try {
     const { cameraId } = req.params;
-    const { username = "admin", password = "" } = req.query as { username?: string; password?: string };
+    let { username, password } = req.query as { username?: string; password?: string };
 
     const camera = await prisma.camera.findUnique({ where: { id: cameraId } });
     if (!camera) {
       return res.status(404).json({ error: "Camera not found" });
     }
+
+    // query에 인증 정보가 없으면 카메라 DB에서 가져오기
+    // usernameEncrypted에 { username, password } JSON이 암호화되어 저장됨
+    if (!username || !password) {
+      if (camera.usernameEncrypted && camera.encryptionIV && camera.encryptionTag) {
+        try {
+          const decrypted = cryptoService.decrypt(
+            camera.usernameEncrypted,
+            camera.encryptionIV,
+            camera.encryptionTag
+          );
+          const creds = JSON.parse(decrypted);
+          username = username || creds.username || "admin";
+          password = password || creds.password;
+        } catch (e) {
+          logger.warn(`Failed to decrypt credentials for camera ${cameraId}`);
+          return res.status(400).json({ error: "Camera credentials not available" });
+        }
+      } else {
+        return res.status(400).json({ error: "Camera credentials not configured" });
+      }
+    }
+
+    // 인증 정보 최종 확인
+    if (!username || !password) {
+      return res.status(400).json({ error: "Camera credentials missing" });
+    }
+
+    // 타입 확정 (TypeScript용)
+    const authUsername: string = username;
+    const authPassword: string = password;
 
     let result: {
       enabled: boolean;
@@ -56,8 +88,8 @@ router.get("/:cameraId", async (req: Request, res) => {
       // Hikvision ISAPI
       const config = await HikvisionDetectionService.getMotionDetection(
         camera.ipAddress,
-        username,
-        password
+        authUsername,
+        authPassword
       );
 
       if (config) {
@@ -73,8 +105,8 @@ router.get("/:cameraId", async (req: Request, res) => {
       // Dahua CGI
       const config = await DahuaDetectionService.getMotionDetection(
         camera.ipAddress,
-        username,
-        password
+        authUsername,
+        authPassword
       );
 
       if (config) {
@@ -87,8 +119,12 @@ router.get("/:cameraId", async (req: Request, res) => {
         };
       }
     } else {
-      return res.status(400).json({
-        error: `Unsupported manufacturer: ${camera.manufacturer}`,
+      // 지원하지 않는 제조사
+      return res.json({
+        cameraId,
+        manufacturer: camera.manufacturer,
+        supported: false,
+        reason: `Unsupported manufacturer: ${camera.manufacturer || "Unknown"}`,
         supportedManufacturers: ["Hikvision", "Dahua"],
       });
     }
@@ -100,6 +136,7 @@ router.get("/:cameraId", async (req: Request, res) => {
     res.json({
       cameraId,
       manufacturer: camera.manufacturer,
+      supported: true,
       ...result,
     });
   } catch (error) {

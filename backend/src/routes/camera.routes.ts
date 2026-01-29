@@ -44,6 +44,8 @@ const cameraSchema = z.object({
   rtspMainStream: z.string().optional(),
   rtspSubStream: z.string().optional(),
   macAddress: z.string().optional(),
+  model: z.string().optional(),
+  manufacturer: z.string().optional(),
 });
 
 // List all cameras
@@ -123,6 +125,8 @@ router.post("/", async (req: Request, res) => {
         rtspSubStream: data.rtspSubStream,
         profileToken,
         macAddress: data.macAddress,
+        model: data.model,
+        manufacturer: data.manufacturer,
         // 인증 정보 저장 (usernameEncrypted에 전체 JSON 저장)
         usernameEncrypted: encrypted.encrypted,
         passwordEncrypted: null, // 사용 안 함 (JSON에 포함)
@@ -140,6 +144,8 @@ router.post("/", async (req: Request, res) => {
         rtspSubStream: data.rtspSubStream,
         profileToken,
         macAddress: data.macAddress,
+        model: data.model,
+        manufacturer: data.manufacturer,
         // 인증 정보 저장 (usernameEncrypted에 전체 JSON 저장)
         usernameEncrypted: encrypted.encrypted,
         passwordEncrypted: null, // 사용 안 함 (JSON에 포함)
