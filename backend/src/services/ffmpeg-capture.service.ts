@@ -3,6 +3,7 @@ import { promisify } from "util";
 import * as path from "path";
 import * as fs from "fs";
 import logger from "../utils/logger";
+import { FFMPEG_PATH } from "../config/paths";
 
 const execAsync = promisify(exec);
 
@@ -21,9 +22,6 @@ const execAsync = promisify(exec);
  * - 알람 발생 시 증거 영상 저장
  * - 모션 감지를 위한 프레임 비교
  */
-
-// FFmpeg 실행 파일 경로 (macOS Homebrew)
-const FFMPEG_PATH = "/opt/homebrew/bin/ffmpeg";
 
 export class FFmpegCaptureService {
   // 파일 저장 디렉토리

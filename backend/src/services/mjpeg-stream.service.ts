@@ -4,11 +4,10 @@ import { Server as SocketServer } from "socket.io";
 import { PrismaClient } from "@prisma/client";
 import { cryptoService } from "./crypto.service";
 import logger from "../utils/logger";
+import { FFMPEG_PATH } from "../config/paths";
 
 const execAsync = promisify(exec);
 const prisma = new PrismaClient();
-
-const FFMPEG_PATH = "/opt/homebrew/bin/ffmpeg";
 
 interface MjpegStream {
   process: ChildProcess;
