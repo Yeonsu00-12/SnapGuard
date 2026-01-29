@@ -2,6 +2,7 @@ import { spawn, ChildProcess } from "child_process";
 import * as path from "path";
 import * as fs from "fs";
 import logger from "../utils/logger";
+import { FFMPEG_PATH } from "../config/paths";
 
 /**
  * ============================================================
@@ -26,8 +27,6 @@ import logger from "../utils/logger";
  * ├── segment_001.ts
  * └── segment_002.ts     # hls_list_size=3 → 최근 3개만 유지
  */
-
-const FFMPEG_PATH = "/opt/homebrew/bin/ffmpeg";
 
 interface StreamProcess {
   process: ChildProcess;
