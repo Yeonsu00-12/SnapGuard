@@ -69,6 +69,10 @@ class ApiClient {
     return this.request("/auth/logout", { method: "POST" });
   }
 
+  async me() {
+    return this.request<{ user: { id: string; email: string } }>("/auth/me");
+  }
+
   // Sites
   async getSites() {
     return this.request<any[]>("/sites");
@@ -135,7 +139,7 @@ class ApiClient {
     if (username) params.append("username", username);
     if (password) params.append("password", password);
     const query = params.toString() ? `?${params.toString()}` : "";
-    return this.request<{ enabled: boolean; sensitivity: number; grid: boolean[][] }>(
+    return this.request<{ enabled: boolean; sensitivity: number; grid: boolean[][]; supported?: boolean }>(
       `/motion-detection/${cameraId}${query}`
     );
   }
