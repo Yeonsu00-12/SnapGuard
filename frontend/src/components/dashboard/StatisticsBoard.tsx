@@ -15,10 +15,10 @@ export default function StatisticsBoard({ sites, totalCameras, alertCount }: Sta
                         <Store size={16} className="text-[#0888FF]" />
                     </p>
                     <div className="flex flex-row items-center justify-between">
-                        <p className="text-sm font-bold text-[#8E8E9A] tracking-tighter">
+                        <p className="text-xs sm:text-sm font-bold text-[#8E8E9A] tracking-tighter whitespace-nowrap">
                             운영 사이트
                         </p>
-                        <p className="text-lg font-bold">{sites.length}곳</p>
+                        <p className="text-sm font-bold">{sites.length}곳</p>
                     </div>
                 </div>
                 <div className="bg-white border border-[#31C6B4]/60 shadow-sm rounded-xl text-center flex flex-col gap-1 justify-center p-3">
@@ -26,10 +26,10 @@ export default function StatisticsBoard({ sites, totalCameras, alertCount }: Sta
                         <Cctv size={16} className="text-[#31C6B4]" />
                     </p>
                     <div className="flex flex-row items-center justify-between">
-                        <p className="text-sm font-bold text-[#8E8E9A] tracking-tighter">
-                            연결된 카메라
+                        <p className="text-xs sm:text-sm font-bold text-[#8E8E9A] tracking-tighter whitespace-nowrap">
+                            연결 카메라
                         </p>
-                        <p className="text-lg font-bold">{totalCameras}대</p>
+                        <p className="text-sm font-bold">{totalCameras}대</p>
                     </div>
                 </div>
                 <div
@@ -37,8 +37,8 @@ export default function StatisticsBoard({ sites, totalCameras, alertCount }: Sta
                 >
                     <p className="p-1 w-fit rounded-md bg-[#FF2D46]/20"><Bell size={16} className="text-[#FF2D46]" /></p>
                     <div className="flex flex-row items-center justify-between">
-                        <p className="text-sm font-bold uppercase tracking-tighter text-[#8E8E9A]">오늘 알림</p>
-                        <p className={`text-lg font-bold ${alertCount > 0 && "text-[#FF2D46]"}`}>{alertCount}건</p>
+                        <p className="text-xs sm:text-sm font-bold uppercase tracking-tighter text-[#8E8E9A] whitespace-nowrap">오늘 알림</p>
+                        <p className={`text-sm font-bold ${alertCount > 0 && "text-[#FF2D46]"}`}>{alertCount}건</p>
                     </div>
                 </div>
             </section>
