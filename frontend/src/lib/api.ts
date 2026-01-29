@@ -144,6 +144,21 @@ class ApiClient {
     );
   }
 
+  async setMotionDetection(
+    cameraId: string,
+    grid: boolean[][],
+    sensitivity: number = 50,
+    enabled: boolean = true
+  ) {
+    return this.request<{ success: boolean; message: string }>(
+      `/motion-detection/${cameraId}`,
+      {
+        method: "PUT",
+        body: { enabled, sensitivity, grid },
+      }
+    );
+  }
+
   // Alarms
   async getAlarms(params?: Record<string, any>) {
     const query = params ? "?" + new URLSearchParams(params).toString() : "";
