@@ -62,6 +62,12 @@ router.post("/login", async (req: Request, res: Response) => {
       return res.status(401).json({ error: "이메일 또는 비밀번호가 올바르지 않습니다" });
     }
 
+    // 세션에 사용자 정보 저장
+    (req.session as any).user = {
+      id: user.id,
+      email: user.email,
+    };
+
     logger.info(`User logged in: ${email}`);
     res.json({
       user: {
@@ -77,7 +83,23 @@ router.post("/login", async (req: Request, res: Response) => {
 
 // Logout
 router.post("/logout", (req: Request, res: Response) => {
-  res.json({ message: "Logged out successfully" });
+  req.session.destroy((err) => {
+    if (err) {
+      logger.error("Logout error:", err);
+      return res.status(500).json({ error: "로그아웃에 실패했습니다" });
+    }
+    res.clearCookie("connect.sid");
+    res.json({ message: "Logged out successfully" });
+  });
+});
+
+// Get current user
+router.get("/me", (req: Request, res: Response) => {
+  const user = (req.session as any).user;
+  if (!user) {
+    return res.status(401).json({ error: "인증되지 않은 사용자입니다" });
+  }
+  res.json({ user });
 });
 
 export default router;

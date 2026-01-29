@@ -48,11 +48,26 @@ const cameraSchema = z.object({
   manufacturer: z.string().optional(),
 });
 
-// List all cameras
+// List all cameras (현재 사용자가 접근 가능한 사이트의 카메라만)
 router.get("/", async (req: Request, res) => {
   try {
+    const user = (req.session as any).user;
+    if (!user) {
+      return res.status(401).json({ error: "인증이 필요합니다" });
+    }
+
+    // 사용자가 접근 가능한 사이트 ID 목록 조회
+    const userSites = await prisma.userSite.findMany({
+      where: { userId: user.id },
+      select: { siteId: true },
+    });
+    const accessibleSiteIds = userSites.map((us) => us.siteId);
+
     const cameras = await prisma.camera.findMany({
-      where: { isActive: true, siteId: { not: null } },
+      where: {
+        isActive: true,
+        siteId: { in: accessibleSiteIds },
+      },
       select: {
         id: true,
         siteId: true,
@@ -86,7 +101,26 @@ router.get("/", async (req: Request, res) => {
 // Add camera (ONVIF 전용)
 router.post("/", async (req: Request, res) => {
   try {
+    const user = (req.session as any).user;
+    if (!user) {
+      return res.status(401).json({ error: "인증이 필요합니다" });
+    }
+
     const data = cameraSchema.parse(req.body);
+
+    // 사이트에 카메라 추가 권한 확인
+    const userSite = await prisma.userSite.findUnique({
+      where: {
+        userId_siteId: {
+          userId: user.id,
+          siteId: data.siteId,
+        },
+      },
+    });
+
+    if (!userSite || !userSite.canEdit) {
+      return res.status(403).json({ error: "이 사이트에 카메라를 추가할 권한이 없습니다" });
+    }
 
     // ONVIF로 RTSP URL 자동 획득
     let rtspMainStream = data.rtspMainStream;
@@ -178,6 +212,11 @@ router.post("/", async (req: Request, res) => {
 // Get camera details
 router.get("/:id", async (req: Request, res) => {
   try {
+    const user = (req.session as any).user;
+    if (!user) {
+      return res.status(401).json({ error: "인증이 필요합니다" });
+    }
+
     const { id } = req.params;
 
     const camera = await prisma.camera.findUnique({
@@ -206,6 +245,22 @@ router.get("/:id", async (req: Request, res) => {
       return res.status(404).json({ error: "Camera not found" });
     }
 
+    // 카메라가 속한 사이트에 대한 접근 권한 확인
+    if (camera.siteId) {
+      const userSite = await prisma.userSite.findUnique({
+        where: {
+          userId_siteId: {
+            userId: user.id,
+            siteId: camera.siteId,
+          },
+        },
+      });
+
+      if (!userSite) {
+        return res.status(403).json({ error: "이 카메라에 접근 권한이 없습니다" });
+      }
+    }
+
     res.json(camera);
   } catch (error) {
     logger.error("Get camera error:", error);
@@ -216,7 +271,39 @@ router.get("/:id", async (req: Request, res) => {
 // Update camera
 router.put("/:id", async (req: Request, res) => {
   try {
+    const user = (req.session as any).user;
+    if (!user) {
+      return res.status(401).json({ error: "인증이 필요합니다" });
+    }
+
     const { id } = req.params;
+
+    // 기존 카메라 조회
+    const existingCamera = await prisma.camera.findUnique({
+      where: { id },
+      select: { siteId: true },
+    });
+
+    if (!existingCamera) {
+      return res.status(404).json({ error: "Camera not found" });
+    }
+
+    // 수정 권한 확인
+    if (existingCamera.siteId) {
+      const userSite = await prisma.userSite.findUnique({
+        where: {
+          userId_siteId: {
+            userId: user.id,
+            siteId: existingCamera.siteId,
+          },
+        },
+      });
+
+      if (!userSite || !userSite.canEdit) {
+        return res.status(403).json({ error: "이 카메라를 수정할 권한이 없습니다" });
+      }
+    }
+
     const data = cameraSchema.partial().parse(req.body);
 
     const camera = await prisma.camera.update({
@@ -247,7 +334,38 @@ router.put("/:id", async (req: Request, res) => {
 // Delete camera
 router.delete("/:id", async (req: Request, res) => {
   try {
+    const user = (req.session as any).user;
+    if (!user) {
+      return res.status(401).json({ error: "인증이 필요합니다" });
+    }
+
     const { id } = req.params;
+
+    // 기존 카메라 조회
+    const existingCamera = await prisma.camera.findUnique({
+      where: { id },
+      select: { siteId: true },
+    });
+
+    if (!existingCamera) {
+      return res.status(404).json({ error: "Camera not found" });
+    }
+
+    // 삭제 권한 확인
+    if (existingCamera.siteId) {
+      const userSite = await prisma.userSite.findUnique({
+        where: {
+          userId_siteId: {
+            userId: user.id,
+            siteId: existingCamera.siteId,
+          },
+        },
+      });
+
+      if (!userSite || !userSite.canManage) {
+        return res.status(403).json({ error: "이 카메라를 삭제할 권한이 없습니다" });
+      }
+    }
 
     await prisma.camera.delete({
       where: { id },
