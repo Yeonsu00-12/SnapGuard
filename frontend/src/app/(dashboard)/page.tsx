@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { useAlarmStore } from "@/stores/useAlarmStore";
 import { AlertTriangle, CheckIcon, Store } from "lucide-react";
 import StatisticsBoard from "@/components/dashboard/StatisticsBoard";
 import AlarmInfo from "@/components/dashboard/AlarmInfo";
@@ -13,10 +14,11 @@ import AlarmFeedHeader from "@/components/dashboard/AlarmFeedHeader";
 export default function HomePage() {
   const router = useRouter();
   const [sites, setSites] = useState<Site[]>([]);
-  const [recentAlarms, setRecentAlarms] = useState<Alarm[]>([]);
-  const [alertCount, setAlertCount] = useState(0);
   const [totalCameras, setTotalCameras] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Zustand 스토어에서 알람 데이터 구독
+  const { recentAlarms, todayAlarmCount, setRecentAlarms, setTodayAlarmCount } = useAlarmStore();
 
   useEffect(() => {
     loadData();
@@ -24,16 +26,25 @@ export default function HomePage() {
 
   const loadData = async () => {
     try {
+      // 오늘 날짜 범위 계산
+      const today = new Date();
+      const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+      const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59);
+
       const [sitesData, alarmsData, alarmStats, camerasData] = await Promise.all([
         api.getSites(),
         api.getAlarms({ limit: "5" }),
-        api.getAlarmStats(),
+        api.getAlarmStats({
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        }),
         api.getCameras(),
       ]);
 
       setSites(sitesData);
+      // Zustand 스토어에 초기 데이터 설정
       setRecentAlarms(alarmsData.alarms);
-      setAlertCount(alarmStats.byStatus?.NEW || 0);
+      setTodayAlarmCount(alarmStats.total || 0);
       setTotalCameras(camerasData.length);
     } catch (error) {
       console.error("Failed to load data:", error);
@@ -53,7 +64,7 @@ export default function HomePage() {
   return (
     <div className="p-4 space-y-6 pb-40">
       {/* 상단 통계 위젯 */}
-      <StatisticsBoard sites={sites} totalCameras={totalCameras} alertCount={alertCount} />
+      <StatisticsBoard sites={sites} totalCameras={totalCameras} alertCount={todayAlarmCount} />
 
       {/* 실시간 알림 피드 */}
       <section className="space-y-3">
@@ -69,7 +80,7 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {recentAlarms.map((alarm) => {
+            {recentAlarms.slice(0, 5).map((alarm) => {
               const isAlarm = alarm.severity === "CRITICAL" || alarm.severity === "HIGH";
               return (
                 <div

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
+import { useAlarmStore } from "@/stores/useAlarmStore";
 import EventTimeline from "@/components/EventTimeline";
 import ReportModal from "@/components/ReportModal";
 import EmergencyReportModal from "@/components/alerts/emergency/EmergencyReportModal";
@@ -43,6 +44,33 @@ export default function AlertsPage() {
   useEffect(() => {
     loadData();
   }, [selectedDate, selectedCamera]);
+
+  // Zustand 스토어에서 실시간 알람 수신
+  const recentAlarms = useAlarmStore((state) => state.recentAlarms);
+  const prevAlarmsLengthRef = useRef(recentAlarms.length);
+
+  useEffect(() => {
+    // 새 알람이 추가되었는지 확인
+    if (recentAlarms.length > prevAlarmsLengthRef.current) {
+      const newAlarm = recentAlarms[0];
+      if (newAlarm) {
+        // 현재 선택된 날짜와 같은 날짜인지 확인
+        const alarmDate = new Date(newAlarm.detectionTime);
+        const isSameDate =
+          alarmDate.getFullYear() === selectedDate.getFullYear() &&
+          alarmDate.getMonth() === selectedDate.getMonth() &&
+          alarmDate.getDate() === selectedDate.getDate();
+
+        // 카메라 필터 확인
+        const matchesCamera = !selectedCamera || newAlarm.camera.id === selectedCamera;
+
+        if (isSameDate && matchesCamera) {
+          setAlarms((prev) => [newAlarm, ...prev]);
+        }
+      }
+    }
+    prevAlarmsLengthRef.current = recentAlarms.length;
+  }, [recentAlarms, selectedDate, selectedCamera]);
 
   const loadData = async () => {
     try {
