@@ -21,6 +21,26 @@ const nextConfig = {
       },
     ],
   },
+  async rewrites() {
+    const backendUrl = process.env.BACKEND_URL || "http://localhost:4000";
+    return [
+      // API 프록시
+      {
+        source: "/api/:path*",
+        destination: `${backendUrl}/api/:path*`,
+      },
+      // 정적 파일 (스냅샷, HLS 등)
+      {
+        source: "/uploads/:path*",
+        destination: `${backendUrl}/uploads/:path*`,
+      },
+      // Socket.IO 프록시
+      {
+        source: "/socket.io/:path*",
+        destination: `${backendUrl}/socket.io/:path*`,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

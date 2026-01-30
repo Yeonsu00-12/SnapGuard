@@ -1,5 +1,6 @@
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
-export const SERVER_BASE = API_BASE.replace("/api", "");
+// 프록시 사용: 같은 origin으로 요청 → next.config.mjs rewrites가 백엔드로 전달
+export const API_BASE = "/api";
+export const SERVER_BASE = "";
 
 interface RequestOptions {
   method?: string;
