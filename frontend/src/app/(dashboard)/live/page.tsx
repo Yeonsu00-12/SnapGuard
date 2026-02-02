@@ -153,7 +153,7 @@ export default function LiveViewPage() {
 
         <div className="flex items-center gap-4 px-4">
           {/* 스트림 모드 토글 */}
-          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+          {/* <div className="flex items-center bg-gray-100 rounded-lg p-1">
             <button
               onClick={() => handleModeChange("mjpeg")}
               disabled={isChangingMode}
@@ -174,7 +174,7 @@ export default function LiveViewPage() {
             >
               HLS
             </button>
-          </div>
+          </div> */}
 
           <select
             value={selectedSite}
