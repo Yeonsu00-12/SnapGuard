@@ -2,6 +2,7 @@
 
 import { Siren } from "lucide-react";
 import Image from "next/image";
+import { SERVER_BASE } from "@/lib/api";
 import {
   Carousel,
   CarouselContent,
@@ -21,9 +22,9 @@ interface DetailAlarmProps {
 const getMediaUrl = (path: string | null) => {
   if (!path) return null;
   if (path.includes("/uploads/")) {
-    return path.substring(path.indexOf("/uploads/"));
+    return `${SERVER_BASE}${path.substring(path.indexOf("/uploads/"))}`;
   }
-  return `/uploads/snapshots/${path.split("/").pop()}`;
+  return `${SERVER_BASE}/uploads/snapshots/${path.split("/").pop()}`;
 };
 
 export default function DetailAlarm({ selectedAlarm, closeModal, onReportClick }: DetailAlarmProps) {
