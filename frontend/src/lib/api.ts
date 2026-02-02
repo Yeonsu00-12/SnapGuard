@@ -1,5 +1,4 @@
 export const API_BASE = "/api";
-export const SERVER_BASE = "http://localhost:4000";
 
 const USER_STORAGE_KEY = "snapguard_user";
 

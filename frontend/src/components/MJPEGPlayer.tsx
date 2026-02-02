@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
-import { SERVER_BASE } from "@/lib/api";
 
 interface MJPEGPlayerProps {
   cameraId: string;
@@ -101,8 +100,9 @@ export function MJPEGPlayer({
 
     const token = localStorage.getItem("token");
 
-    // Socket.IO 연결
-    const socket = io(SERVER_BASE, {
+    // Next.js rewrites 프록시를 통해 백엔드로 연결 (Vercel 배포 지원)
+    const socket = io({
+      path: "/socket.io",
       transports: ["websocket", "polling"],
       auth: { token },
     });

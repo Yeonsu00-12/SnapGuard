@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { io } from "socket.io-client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { SERVER_BASE } from "@/lib/api";
 import { useAlarmStore } from "@/stores/useAlarmStore";
 
 export function AlarmNotificationProvider({ children }: { children: React.ReactNode }) {
@@ -12,7 +11,9 @@ export function AlarmNotificationProvider({ children }: { children: React.ReactN
   const { addAlarm, setConnected } = useAlarmStore();
 
   useEffect(() => {
-    const socket = io(SERVER_BASE, {
+    // Next.js rewrites 프록시를 통해 백엔드로 연결 (Vercel 배포 지원)
+    const socket = io({
+      path: "/socket.io",
       transports: ["websocket", "polling"],
       withCredentials: true,
     });
