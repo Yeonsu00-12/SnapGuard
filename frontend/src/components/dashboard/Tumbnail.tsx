@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { SERVER_BASE } from "@/lib/api";
 
 export default function Thumbnail({ alarm, isAlarm }: { alarm: Alarm; isAlarm?: boolean }) {
     return (
@@ -7,11 +8,11 @@ export default function Thumbnail({ alarm, isAlarm }: { alarm: Alarm; isAlarm?: 
                 <Image
                     width={80}
                     height={80}
-                    src={
+                    src={`${SERVER_BASE}${
                         alarm.snapshotPath.includes("/uploads/")
                         ? alarm.snapshotPath.substring(alarm.snapshotPath.indexOf("/uploads/"))
                         : `/uploads/snapshots/${alarm.snapshotPath.split("/").pop()}`
-                    }
+                    }`}
                     className="w-full h-full object-cover"
                     alt="Snapshot"
                 />

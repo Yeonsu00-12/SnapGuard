@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
-import { api } from "@/lib/api";
+import { api, SERVER_BASE } from "@/lib/api";
 
 interface HLSPlayerProps {
   cameraId: string;
@@ -30,7 +30,7 @@ export function HLSPlayer({
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/stream/${cameraId}/start`, {
+      const response = await fetch(`${SERVER_BASE}/api/stream/${cameraId}/start`, {
         method: "POST",
       });
       const data = await response.json();
@@ -41,7 +41,7 @@ export function HLSPlayer({
 
       const elapsed = ((performance.now() - mountTimeRef.current) / 1000).toFixed(2);
       console.log(`[HLS] ⏱️ +${elapsed}s: API 응답 받음, HLS URL 설정`);
-      setHlsUrl(data.hlsUrl);
+      setHlsUrl(`${SERVER_BASE}${data.hlsUrl}`);
     } catch (err: any) {
       console.error("[HLS] Start error:", err);
       setError(err.message || "스트림 시작 실패");
@@ -170,7 +170,7 @@ export function HLSPlayer({
     cleanupHls();
     // 백엔드 스트림 재시작
     try {
-      await fetch(`/api/stream/${cameraId}/stop`, { method: "POST" });
+      await fetch(`${SERVER_BASE}/api/stream/${cameraId}/stop`, { method: "POST" });
     } catch (err) {
       // ignore
     }

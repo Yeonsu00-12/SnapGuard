@@ -1,3 +1,4 @@
+import { SERVER_BASE } from "@/lib/api";
 import { AlertCircle, Camera, CheckCircle2, RefreshCw } from "lucide-react";
 import Image from "next/image";
 
@@ -39,7 +40,7 @@ export default function ConnetedCamera({ connecting, currentConnectingIp, connec
                         >
                             {connected?.snapshotUrl ? (
                                 <Image
-                                    src={connected.snapshotUrl}
+                                    src={`${SERVER_BASE}${connected.snapshotUrl}`}
                                     alt="Camera"
                                     width={80}
                                     height={80}

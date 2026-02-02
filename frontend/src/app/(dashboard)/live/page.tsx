@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { api, SERVER_BASE } from "@/lib/api";
 import { StreamPlayer, StreamMode } from "@/components/StreamPlayer";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -37,7 +37,7 @@ export default function LiveViewPage() {
 
       await Promise.all(
         targetCameras.map((c) =>
-          fetch(`/api/stream/${c.id}/stop`, { method: "POST" }).catch(() => { })
+          fetch(`${SERVER_BASE}/api/stream/${c.id}/stop`, { method: "POST" }).catch(() => { })
         )
       );
     }

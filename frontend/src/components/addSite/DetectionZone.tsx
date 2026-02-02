@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import DetectionGrid from "../DetectionGrid";
+import { SERVER_BASE } from "@/lib/api";
 
 export default function DetectionZone({ wizard }: { wizard: any }) {
     const {
@@ -78,7 +79,9 @@ export default function DetectionZone({ wizard }: { wizard: any }) {
                 {/* 감지 영역 그리드 */}
                 <DetectionGrid
                     key={currentIp}
-                    snapshotUrl={connected.snapshotUrl || undefined}
+                    snapshotUrl={
+                        connected.snapshotUrl ? `${SERVER_BASE}${connected.snapshotUrl}` : undefined
+                    }
                     initialGrid={detectionGrids.get(currentIp)}
                     sensitivity={sensitivities.get(currentIp) || 60}
                     onGridChange={(grid) => setDetectionGrid(currentIp, grid)}
