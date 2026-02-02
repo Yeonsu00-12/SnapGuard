@@ -1,6 +1,12 @@
-// 프록시 사용: 같은 origin으로 요청 → next.config.mjs rewrites가 백엔드로 전달
 export const API_BASE = "/api";
-export const SERVER_BASE = "";
+export const SERVER_BASE = "http://localhost:4000";
+
+const USER_STORAGE_KEY = "snapguard_user";
+
+interface User {
+  id: string;
+  email: string;
+}
 
 interface RequestOptions {
   method?: string;
@@ -9,16 +15,44 @@ interface RequestOptions {
 }
 
 class ApiClient {
+  // localStorage에서 유저 정보 가져오기
+  getStoredUser(): User | null {
+    if (typeof window === "undefined") return null;
+    const stored = localStorage.getItem(USER_STORAGE_KEY);
+    if (!stored) return null;
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return null;
+    }
+  }
+
+  // localStorage에 유저 정보 저장
+  setStoredUser(user: User | null) {
+    if (typeof window === "undefined") return;
+    if (user) {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(USER_STORAGE_KEY);
+    }
+  }
+
   async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+    const user = this.getStoredUser();
+
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...options.headers,
     };
 
+    // X-User-Email 헤더 추가
+    if (user?.email) {
+      headers["X-User-Email"] = user.email;
+    }
+
     const response = await fetch(`${API_BASE}${endpoint}`, {
       method: options.method || "GET",
       headers,
-      credentials: "include", // 세션 쿠키 포함
       body: options.body ? JSON.stringify(options.body) : undefined,
     });
 
@@ -30,48 +64,36 @@ class ApiClient {
     return response.json();
   }
 
-  // Generic HTTP methods
-  async get<T = any>(endpoint: string): Promise<{ data: T }> {
-    const data = await this.request<T>(endpoint);
-    return { data };
-  }
-
-  async post<T = any>(endpoint: string, body?: any): Promise<{ data: T }> {
-    const data = await this.request<T>(endpoint, { method: "POST", body });
-    return { data };
-  }
-
-  async put<T = any>(endpoint: string, body?: any): Promise<{ data: T }> {
-    const data = await this.request<T>(endpoint, { method: "PUT", body });
-    return { data };
-  }
-
-  async delete<T = any>(endpoint: string): Promise<{ data: T }> {
-    const data = await this.request<T>(endpoint, { method: "DELETE" });
-    return { data };
-  }
-
-  // Auth (세션 기반)
+  // Auth
   async login(email: string, password: string) {
-    return this.request<{ user: any }>("/auth/login", {
+    const result = await this.request<{ user: User }>("/auth/login", {
       method: "POST",
       body: { email, password },
     });
+    this.setStoredUser(result.user);
+    return result;
   }
 
   async register(email: string, password: string) {
-    return this.request<{ user: any }>("/auth/register", {
+    const result = await this.request<{ user: User }>("/auth/register", {
       method: "POST",
       body: { email, password },
     });
+    this.setStoredUser(result.user);
+    return result;
   }
 
   async logout() {
-    return this.request("/auth/logout", { method: "POST" });
+    this.setStoredUser(null);
+    return { message: "Logged out" };
   }
 
   async me() {
-    return this.request<{ user: { id: string; email: string } }>("/auth/me");
+    const user = this.getStoredUser();
+    if (!user) {
+      throw new Error("인증이 필요합니다");
+    }
+    return { user };
   }
 
   // Sites
@@ -104,7 +126,7 @@ class ApiClient {
     return this.request(`/cameras/${id}`, { method: "DELETE" });
   }
 
-  // Discovery (WS-Discovery)
+  // Discovery
   async scanCameras(timeout: number = 5000) {
     return this.request<{ cameras: any[]; count: number; message: string }>("/discovery/scan", {
       method: "POST",
@@ -112,7 +134,6 @@ class ApiClient {
     });
   }
 
-  // Connect camera (ONVIF or Hikvision ISAPI)
   async connectCamera(
     ipAddress: string,
     username: string,
